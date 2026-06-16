@@ -1,0 +1,143 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  DONE
+  CANCELED
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum TaskCategory {
+  MAINTENANCE
+  SECURITY
+  ADMINISTRATIVE
+  FINANCIAL
+  PERSONAL
+  OPERATIONAL
+  OTHER
+}
+
+enum TaskActivityType {
+  CREATED
+  UPDATED
+  STATUS_CHANGED
+  AI_PROCESSED
+  ATTACHMENT_ADDED
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+model User {
+  id           String         @id @default(uuid())
+  name         String
+  email        String         @unique
+  passwordHash String         @map("password_hash")
+  role         UserRole       @default(USER)
+  createdAt    DateTime       @default(now()) @map("created_at")
+  updatedAt    DateTime       @updatedAt @map("updated_at")
+  tasks        Task[]
+  refreshTokens RefreshToken[]
+  systemSettingAudits SystemSettingAudit[]
+
+  @@map("users")
+}
+
+model SystemSetting {
+  id             String   @id @default(uuid())
+  key            String   @unique
+  valueEncrypted String   @map("value_encrypted")
+  isSecret       Boolean  @default(false) @map("is_secret")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@map("system_settings")
+}
+
+model SystemSettingAudit {
+  id         String   @id @default(uuid())
+  settingKey String   @map("setting_key")
+  action     String
+  userId     String   @map("user_id")
+  userEmail  String?  @map("user_email")
+  createdAt  DateTime @default(now()) @map("created_at")
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([settingKey])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("system_setting_audits")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String   @map("user_id")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+model Task {
+  id                  String        @id @default(uuid())
+  userId              String        @map("user_id")
+  title               String
+  description         String?
+  transcription       String?
+  aiRawResponse       Json?         @map("ai_raw_response")
+  priority            TaskPriority  @default(MEDIUM)
+  category            TaskCategory  @default(OTHER)
+  status              TaskStatus    @default(PENDING)
+  dueDate             DateTime?     @map("due_date")
+  latitude            Float?
+  longitude           Float?
+  address             String?
+  audioUrl            String?       @map("audio_url")
+  imageUrl            String?       @map("image_url")
+  priorityEditedByUser Boolean      @default(false) @map("priority_edited_by_user")
+  dueDateEditedByUser  Boolean      @default(false) @map("due_date_edited_by_user")
+  categoryEditedByUser Boolean      @default(false) @map("category_edited_by_user")
+  createdAt           DateTime      @default(now()) @map("created_at")
+  updatedAt           DateTime      @updatedAt @map("updated_at")
+  user                User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  activities          TaskActivity[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([priority])
+  @@index([category])
+  @@index([dueDate])
+  @@map("tasks")
+}
+
+model TaskActivity {
+  id        String           @id @default(uuid())
+  taskId    String           @map("task_id")
+  type      TaskActivityType
+  message   String
+  metadata  Json?
+  createdAt DateTime         @default(now()) @map("created_at")
+  task      Task             @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+  @@map("task_activities")
+}
