@@ -540,8 +540,8 @@ export class TaskService {
           reprocessedOnUpdate: true,
           reprocessedAt: new Date().toISOString(),
           ...(ai.geminiFailed
-            ? { processingStatus: 'partial', geminiFailed: true, geminiError: ai.geminiError }
-            : {}),
+            ? { processingStatus: 'partial', geminiFailed: true, geminiError: ai.geminiError, retryable: true }
+            : { processingStatus: 'complete', geminiFailed: false, geminiError: null, retryable: false }),
         };
       }
     }
