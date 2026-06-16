@@ -299,21 +299,33 @@ Ao solicitar mudanças ou gerar instruções para o Claude Code, seja cirúrgico
 
 ## 13. Melhorias planejadas
 
-### 🔴 Alta prioridade
+### ✅ Implementadas
 
-- **Fila offline no mobile** — `useOfflineQueueStore` e `features/offline/queue.ts` já estão esboçados mas não integrados. Salvar tarefas localmente quando sem internet e sincronizar ao reconectar.
-- **Retry de tarefas `partial`** — tarefas com `processingStatus: 'partial'` e `retryable: true` não têm botão de reprocessamento no app. Adicionar ação de retry que chama o Gemini novamente via `PATCH /tasks/:id`.
-- **Notificações de vencimento** — tarefas têm `dueDate` mas o app não alerta. Implementar notificações locais com `expo-notifications` para tarefas próximas de vencer ou atrasadas.
+- **Fila offline no mobile** — tasks salvas localmente via AsyncStorage quando sem internet,
+  sync automático ao reconectar via NetInfo. Arquivos: mobile/src/features/offline/queue.ts,
+  mobile/src/store/index.ts, mobile/src/hooks/useTasks.ts, mobile/src/hooks/useOfflineSync.ts.
+- **Retry de tarefas partial** — botão "Reprocessar com IA" em TaskDetailScreen aparece
+  quando retryable === true; backend limpa os campos partial/geminiFailed apos sucesso.
+  Arquivos: mobile/src/screens/TaskDetailScreen.tsx, src/modules/tasks/task.service.ts.
+- **Notificacoes de vencimento** — agenda notificacao 1 dia antes e no dia do vencimento
+  via expo-notifications (requer dev build ou APK — nao funciona no Expo Go).
+  Arquivos: mobile/src/utils/notifications.ts, mobile/App.tsx, mobile/src/hooks/useTasks.ts.
+- **Localizacao no detalhe da tarefa** — ja estava implementado: botao "Abrir no mapa"
+  em TaskDetailScreen.tsx abre Google Maps com latitude/longitude da tarefa.
+- **Edicao de tarefas no mobile** — ja estava implementada: modal de edicao completo
+  em TaskDetailScreen.tsx com texto, data, fotos e reprocessamento via Gemini.
 
-### 🟡 Médio impacto
+### 🟡 Pendentes — medio impacto
 
-- **Widget de captura rápida (Android)** — widget na tela inicial com botão de microfone abrindo direto na gravação.
-- **Edição de tarefas no mobile** — confirmar e completar tela de edição (o `PATCH /tasks/:id` já existe no backend).
-- **Filtros salvos** — salvar combinações de filtros na tela de Tarefas como atalhos (ex: "Urgentes de hoje").
-- **Localização no detalhe da tarefa** — exibir link para Maps com o endereço onde a tarefa foi criada (latitude/longitude já são capturados).
+- **Widget de captura rapida (Android)** — widget na tela inicial com botao de microfone
+  abrindo direto na gravacao.
+- **Filtros salvos** — salvar combinacoes de filtros na tela de Tarefas como atalhos
+  (ex: "Urgentes de hoje").
 
-### 🟢 Baixo esforço, alto valor
+### 🟢 Pendentes — baixo esforco, alto valor
 
-- **Dashboard mais rico** — adicionar gráfico de produtividade semanal aproveitando os dados já retornados por `GET /tasks/dashboard`.
+- **Dashboard mais rico** — grafico de produtividade semanal aproveitando os dados ja
+  retornados por GET /tasks/dashboard.
 - **Exportar tarefas** — endpoint no backend para gerar PDF ou CSV das tarefas filtradas.
-- **Modo escuro no mobile** — NativeWind já suporta `dark:`, implementar o tema escuro nas telas principais.
+- **Modo escuro no mobile** — NativeWind ja suporta dark:, implementar o tema escuro
+  nas telas principais.
