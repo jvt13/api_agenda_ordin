@@ -37,14 +37,30 @@ export function runPrismaGenerate(): void {
   const prismaClientDir = path.join(backendRoot, 'node_modules', '.prisma', 'client');
   const clientExists = existsSync(path.join(prismaClientDir, 'index.js'));
 
-  try {
-    runPrismaCommand('generate');
-  } catch (error) {
-    const message = (error as Error).message ?? '';
+  const prismaBin = resolvePrismaBin(backendRoot);
+  const execCommand = prismaBin.includes(' ')
+    ? `${prismaBin} generate`
+    : `"${prismaBin}" generate`;
 
-    if (clientExists && message.includes('EPERM')) {
+  try {
+    // stdio 'pipe' (em vez de 'inherit') para que o EPERM do engine venha em error.stderr
+    execSync(execCommand, {
+      cwd: backendRoot,
+      stdio: 'pipe',
+      env: {
+        ...process.env,
+        DATABASE_URL: process.env.DATABASE_URL,
+      },
+    });
+  } catch (error) {
+    const err = error as { message?: string; stderr?: Buffer | string; stdout?: Buffer | string };
+    const stderr = err.stderr?.toString() ?? '';
+    const stdout = err.stdout?.toString() ?? '';
+    const combined = `${err.message ?? ''} ${stderr} ${stdout}`;
+
+    if (clientExists && combined.includes('EPERM')) {
       logger.warn(
-        'prisma generate ignorado — client já existe (arquivo em uso). Reinicie o processo.',
+        'prisma generate ignorado — EPERM com client já existente (engine em uso). Reutilizando client gerado.',
       );
       return;
     }

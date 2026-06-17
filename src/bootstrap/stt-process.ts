@@ -2,9 +2,9 @@ import { execSync, spawn, type ChildProcess } from 'node:child_process';
 import path from 'node:path';
 import { env } from '../config/env.js';
 
-// backend/src/bootstrap → ../../../ → raiz do monorepo (services/stt fica na raiz).
+// Backend na raiz: dist/bootstrap (ou src/bootstrap em dev) → ../.. → raiz do repo (services/stt fica na raiz).
 // __dirname é global nativo (saída CommonJS via tsconfig module=NodeNext sem "type":"module").
-const MONOREPO_ROOT = path.resolve(__dirname, '..', '..', '..');
+const MONOREPO_ROOT = path.resolve(__dirname, '..', '..');
 const STT_APP_PATH = path.join(MONOREPO_ROOT, 'services', 'stt', 'app.py');
 const STT_DIR = path.dirname(STT_APP_PATH);
 
