@@ -38,10 +38,23 @@ function ensureSttDeps(): void {
     console.log('[STT] dependências Python já instaladas');
   } catch {
     console.log('[STT] instalando dependências Python (primeira vez ou ambiente novo)...');
-    execSync(
-      `${findPythonCommand()} -m pip install -r "${requirementsPath}" --quiet`,
-      { stdio: 'inherit' },
-    );
+    try {
+      execSync(
+        `${findPythonCommand()} -m pip install -r "${requirementsPath}" --quiet`,
+        { stdio: 'pipe' },
+      );
+    } catch (error: any) {
+      const output = `${error?.stderr?.toString() ?? ''} ${error?.stdout?.toString() ?? ''} ${error?.message ?? ''}`;
+      if (output.includes('externally-managed-environment')) {
+        console.warn('[STT] ambiente Python gerenciado externamente detectado - usando --break-system-packages');
+        execSync(
+          `${findPythonCommand()} -m pip install -r "${requirementsPath}" --quiet --break-system-packages`,
+          { stdio: 'inherit' },
+        );
+      } else {
+        throw error;
+      }
+    }
     console.log('[STT] dependências instaladas com sucesso');
   }
 }
