@@ -47,10 +47,23 @@ function ensureSttDeps(): void {
       const output = `${error?.stderr?.toString() ?? ''} ${error?.stdout?.toString() ?? ''} ${error?.message ?? ''}`;
       if (output.includes('externally-managed-environment')) {
         console.warn('[STT] ambiente Python gerenciado externamente detectado - usando --break-system-packages');
-        execSync(
-          `${findPythonCommand()} -m pip install -r "${requirementsPath}" --quiet --break-system-packages`,
-          { stdio: 'inherit' },
-        );
+        try {
+          execSync(
+            `${findPythonCommand()} -m pip install -r "${requirementsPath}" --quiet --break-system-packages`,
+            { stdio: 'pipe' },
+          );
+        } catch (innerError: any) {
+          const innerOutput = `${innerError?.stderr?.toString() ?? ''} ${innerError?.stdout?.toString() ?? ''}`;
+          if (innerOutput.includes('Cannot uninstall') || innerOutput.includes('RECORD file not found')) {
+            console.warn('[STT] conflito com pacote do sistema detectado - tentando com --ignore-installed');
+            execSync(
+              `${findPythonCommand()} -m pip install -r "${requirementsPath}" --quiet --break-system-packages --ignore-installed`,
+              { stdio: 'inherit' },
+            );
+          } else {
+            throw innerError;
+          }
+        }
       } else {
         throw error;
       }
